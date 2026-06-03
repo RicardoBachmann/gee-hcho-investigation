@@ -11,14 +11,14 @@ var raddProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing
 var AOI_AMAZON = ee.Geometry.Rectangle([-73, -15, -44, 5]);
 Map.addLayer(
   ee.Image().paint(AOI_AMAZON, 0, 2),
-  { palette: "blue" },
+  { palette: "e37d05" },
   "Area of interest: Amazon",
 );
 
 var AOI_TAPAJOS = ee.Geometry.Rectangle([-61, -11, -54, -2]);
 Map.addLayer(
   ee.Image().paint(AOI_TAPAJOS, 0, 2),
-  { palette: "green" },
+  { palette: "1d6b99" },
   "Area of interest: Tapajos Basin",
 );
 
@@ -211,6 +211,64 @@ Map.addLayer(
   "RADD Disturbance - Sep2024",
   true,
 );
+
+// === TIMELAPS ===
+
+var hchoThumb2024 = ui.Thumbnail({
+  image: hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON),
+  params: {
+    min: hchoProcessor.hchoVis.min,
+    max: hchoProcessor.hchoVis.max,
+    palette: hchoProcessor.hchoVis.palette,
+    region: AOI_AMAZON,
+    framesPerSecond: 2,
+    dimensions: 500,
+  },
+});
+
+var no2Thumb2024 = ui.Thumbnail({
+  image: no2Processor.getTimelapsCollection("2024", AOI_AMAZON),
+  params: {
+    min: no2Processor.no2Vis.min,
+    max: no2Processor.no2Vis.max,
+    palette: no2Processor.no2Vis.palette,
+    region: AOI_AMAZON,
+    framesPerSecond: 2,
+    dimensions: 500,
+  },
+});
+
+// === UI PANNEL
+
+var panel = ui.Panel({
+  widgets: [hchoThumb2024, no2Thumb2024],
+  layout: ui.Panel.Layout.flow("vertical"),
+  style: { position: "top-center" },
+});
+
+Map.add(panel);
+
+// === EXPORT
+/*
+ // Export fix: .visualize() coverts 1-Band-HCHO-Image into 3-Band-RGB-Image / exports requires at least 3bands.
+ var collection = hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON)
+  .map(function(img){
+    return img.visualize(hchoProcessor.hchoVis);
+  });
+ 
+ 
+ Export.video.toDrive({
+  collection: collection,
+  description: 'hchoTimelaps2024',
+  scale: 3500,
+  framesPerSecond: 2,
+  region: AOI_AMAZON
+});
+ 
+ */
+
+// 424 images to much for timelaps...
+print(hchoProcessor.getTimelapsCollection("2025", AOI_AMAZON).size());
 
 // === CHARTS ===
 

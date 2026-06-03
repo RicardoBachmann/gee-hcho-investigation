@@ -1,13 +1,23 @@
 var SENTINEL5P_HCHO = "COPERNICUS/S5P/OFFL/L3_HCHO";
 var s5p_hcho = ee.ImageCollection(SENTINEL5P_HCHO);
+var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 exports.getYearlyComposite = function (year, aoi) {
-  return s5p_hcho
-    .filterDate(year + "-01-01", year + "-12-31")
-    .filterBounds(aoi)
-    .select("tropospheric_HCHO_column_number_density")
-    .mean()
-    .clip(aoi);
+  return (
+    s5p_hcho
+      .filterDate(year + "-01-01", year + "-12-31")
+      .filterBounds(aoi)
+      // Implement QA-Filter (Quality score 0-1)
+      // TROPOMI doc suggest qa_value 0.5 as standard screening to avoid data issues like cloud cover or data-noise
+      // GEE use 'cloud_fraction' band lt(0.5) = less then 50% Cloud cover data
+      .map(function (img) {
+        var qaValue = img.select("cloud_fraction").lt(0.5);
+        return img.updateMask(qaValue);
+      })
+      .select("tropospheric_HCHO_column_number_density")
+      .mean()
+      .clip(aoi)
+  );
 };
 
 var getMonthlyComposite = function (year, month, aoi) {
@@ -18,6 +28,10 @@ var getMonthlyComposite = function (year, month, aoi) {
   return s5p_hcho
     .filterDate(startDate, endDate)
     .filterBounds(aoi)
+    .map(function (img) {
+      var qaValue = img.select("cloud_fraction").lt(0.5);
+      return img.updateMask(qaValue);
+    })
     .select("tropospheric_HCHO_column_number_density")
     .mean()
     .clip(aoi);
@@ -49,7 +63,17 @@ var getAnomalyComposite = function (aoi) {
   return anomalySignal2024;
 };
 
-exports.getAnomalyComposite = getAnomalyComposite;
+// === TIMELAPS
+var getTimelapsCollection = function (year, aoi) {
+  var images = [];
+
+  MONTHS.forEach(function (month) {
+    var hchoImages = getMonthlyComposite(year, month, aoi);
+    images.push(hchoImages);
+  });
+
+  return ee.ImageCollection(images);
+};
 
 var hchoVis = {
   min: 0.0,
@@ -67,3 +91,5 @@ var hchoAnomalyVis = {
 exports.hchoVis = hchoVis;
 exports.s5p_hcho = s5p_hcho;
 exports.hchoAnomalyVis = hchoAnomalyVis;
+exports.getAnomalyComposite = getAnomalyComposite;
+exports.getTimelapsCollection = getTimelapsCollection;

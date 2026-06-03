@@ -1,13 +1,22 @@
 var SENTINEL5P_NO2 = "COPERNICUS/S5P/OFFL/L3_NO2";
 var s5p_no2 = ee.ImageCollection(SENTINEL5P_NO2);
+var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 exports.getYearlyComposite = function (year, aoi) {
-  return s5p_no2
-    .filterDate(year + "-01-01", year + "-12-31")
-    .filterBounds(aoi)
-    .select("tropospheric_NO2_column_number_density")
-    .mean()
-    .clip(aoi);
+  return (
+    s5p_no2
+      .filterDate(year + "-01-01", year + "-12-31")
+      .filterBounds(aoi)
+      // Implement QA-Filter (Quality score 0-1)
+      // TROPOMI doc suggest qa_value 0.5 as standard screening to avoid data issues like cloud cover or data-noise
+      .map(function (img) {
+        var qaValue = img.select("cloud_fraction").lt(0.5);
+        return img.updateMask(qaValue);
+      })
+      .select("tropospheric_NO2_column_number_density")
+      .mean()
+      .clip(aoi)
+  );
 };
 
 var getMonthlyComposite = function (year, month, aoi) {
@@ -18,6 +27,10 @@ var getMonthlyComposite = function (year, month, aoi) {
   return s5p_no2
     .filterDate(startDate, endDate)
     .filterBounds(aoi)
+    .map(function (img) {
+      var qaValue = img.select("cloud_fraction").lt(0.5);
+      return img.updateMask(qaValue);
+    })
     .select("tropospheric_NO2_column_number_density")
     .mean()
     .clip(aoi);
@@ -45,6 +58,21 @@ var getAnomalyComposite = function (aoi) {
 
   return anomalySignal2024;
 };
+
+// === TIMELAPS
+
+var getTimelapsCollection = function (year, aoi) {
+  var images = [];
+
+  MONTHS.forEach(function (month) {
+    var no2Images = getMonthlyComposite(year, month, aoi);
+    images.push(no2Images);
+  });
+
+  return ee.ImageCollection(images);
+};
+
+exports.getTimelapsCollection = getTimelapsCollection;
 
 // Dark color code
 var no2Vis = {
