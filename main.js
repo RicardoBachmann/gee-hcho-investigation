@@ -163,17 +163,51 @@ Map.addLayer(
   false,
 );
 
-// HCHO NO2 Ratio-Layers
+// NO2-Threshold value for Ratio-improvement
+// Dividing by a very small number results in a very large number...
+// Mask NO2 pixels below threshold before division to prevent ratio outliers from near-zero denominator(hcho/no2 calculation)
+
+// max: 0.00047966223896442806
+// min: 5.086483808846122e-7 (decimal point 7 places to the left)
+// min: 0.0000005086!
+// Threshold = One-third of the mean as the lower limit
+// 0.0000305 / 3 = 0.00001017 Threshold
+print(
+  "NO2 monthly Tapajos values:",
+  no2_monthlyTapajos.reduceRegion({
+    reducer: ee.Reducer.minMax().combine(ee.Reducer.mean(), "mean", true), // mean: 0.0000305
+    geometry: AOI_TAPAJOS,
+    scale: 5000,
+    maxPixels: 1e9,
+  }),
+);
+
+print(
+  "HCHO monthly Tapajos values:",
+  hcho_monthlyTapajos.reduceRegion({
+    reducer: ee.Reducer.minMax(),
+    geometry: AOI_TAPAJOS,
+    scale: 5000,
+    maxPixels: 1e9,
+  }),
+);
+
+var no2RatioThreshold = 0.00001017;
+var no2Mask = no2_monthlyTapajos.updateMask(
+  no2_monthlyTapajos.gt(no2RatioThreshold),
+);
+
+// HCHO/NO2-Ratio-Layer
 // .divide() applied to both Sep 2024 composites
-// This shows spatially where the signal is predominantly pyrogenic (anthropogenic) and where it is more
-// biogenic transported
-var ratioSep2024 = hcho_monthlyTapajos.divide(no2_monthlyTapajos);
+// High-Ratio(red) indicates biogenic or pyrogenic, lower-ratio(white) indicates anthropogenic source
+var ratioSep2024 = hcho_monthlyTapajos.divide(no2Mask);
 var ratioVis = {
   min: 0,
   max: 50,
   palette: ["ffffff", "ffcccc", "ff6666", "cc0000", "7a0000"],
 };
 
+print("---- Ratio");
 print(
   ratioSep2024.reduceRegion({
     reducer: ee.Reducer.minMax(),
@@ -183,7 +217,7 @@ print(
   }),
 );
 
-Map.addLayer(ratioSep2024, ratioVis, "HCHO & NO2 Ratio 2024", false);
+Map.addLayer(ratioSep2024, ratioVis, "HCHO/NO2 Ratio 09.2024", false);
 
 Map.addLayer(no2_yearlyAmazon, no2Processor.no2Vis, "Amazon - NO2 2024", false);
 Map.addLayer(
@@ -214,39 +248,43 @@ Map.addLayer(
 
 // === TIMELAPS ===
 
-var hchoThumb2024 = ui.Thumbnail({
-  image: hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON),
-  params: {
-    min: hchoProcessor.hchoVis.min,
-    max: hchoProcessor.hchoVis.max,
+/*
+   var hchoThumb2024 = ui.Thumbnail({
+   image: hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON),
+   params: {
+    min:hchoProcessor.hchoVis.min,
+    max:hchoProcessor.hchoVis.max,
     palette: hchoProcessor.hchoVis.palette,
     region: AOI_AMAZON,
     framesPerSecond: 2,
-    dimensions: 500,
-  },
-});
-
-var no2Thumb2024 = ui.Thumbnail({
-  image: no2Processor.getTimelapsCollection("2024", AOI_AMAZON),
-  params: {
-    min: no2Processor.no2Vis.min,
-    max: no2Processor.no2Vis.max,
+    dimensions: 500
+   }
+ });
+ 
+   var no2Thumb2024 = ui.Thumbnail({
+   image:no2Processor.getTimelapsCollection("2024", AOI_AMAZON),
+   params: {
+    min:no2Processor.no2Vis.min,
+    max:no2Processor.no2Vis.max,
     palette: no2Processor.no2Vis.palette,
     region: AOI_AMAZON,
     framesPerSecond: 2,
-    dimensions: 500,
-  },
-});
+    dimensions: 500
+   }
+ });
+ 
 
-// === UI PANNEL
-
-var panel = ui.Panel({
-  widgets: [hchoThumb2024, no2Thumb2024],
-  layout: ui.Panel.Layout.flow("vertical"),
-  style: { position: "top-center" },
-});
-
-Map.add(panel);
+ // === UI PANNEL 
+ 
+ var panel = ui.Panel({
+   widgets: [hchoThumb2024, no2Thumb2024],
+   layout: ui.Panel.Layout.flow('vertical'),
+   style: {position: 'top-center'}
+ });
+ 
+ Map.add(panel);
+ 
+ */
 
 // === EXPORT
 /*
@@ -284,3 +322,4 @@ aoiStats.buildAnnualFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 aoiStats.buildMonthlyFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 
 aoiStats.buildYearlySeptemberNdviChart(AOI_TAPAJOS);
+aoiStats.buildYearlySeptemberRatioChart(AOI_TAPAJOS, no2RatioThreshold);

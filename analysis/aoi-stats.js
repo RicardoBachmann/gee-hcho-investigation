@@ -196,7 +196,7 @@ var buildYearlySeptemberHchoChart = function (geometryTapajos) {
       hAxis: { title: "Years" },
       vAxis: { title: "HCHO (mol/m²)" },
       lineWidth: 2,
-      colors: ["e37d05", "e37d05", "e37d05"],
+      colors: ["1d6b99", "e37d05", "e37d05"],
       series: {
         0: {},
         1: { lineDashStyle: [4, 4], pointSize: 0 },
@@ -579,6 +579,80 @@ var buildYearlySeptemberNdviChart = function (geometryTapajos) {
   print(chart);
 };
 
+// Yearly September HCHO/NO2 RATIOCHART - Tapajos Basin Chart (2019-2025)
+
+var buildYearlySeptemberRatioChart = function (geometryTapajos, no2Threshold) {
+  var ratioValues = [];
+
+  YEARS.forEach(function (year) {
+    var hchoTapajos = hchoProcessor.getMonthlyComposite(
+      year,
+      9,
+      geometryTapajos,
+    );
+    var no2Tapajos = no2Processor.getMonthlyComposite(year, 9, geometryTapajos);
+
+    var no2Masked = no2Tapajos.updateMask(no2Tapajos.gt(no2Threshold));
+    var no2Ratio = hchoTapajos.divide(no2Masked);
+
+    var ratioMean = no2Ratio.reduceRegion({
+      reducer: ee.Reducer.mean(),
+      geometry: geometryTapajos,
+      scale: 5000,
+      maxPixels: 1e9,
+    });
+
+    ratioValues.push(ratioMean.get("tropospheric_HCHO_column_number_density"));
+    print("---" + year + "---");
+    print(
+      "RATIO TAPAJOS REGION",
+      ratioMean.get("tropospheric_HCHO_column_number_density"),
+    );
+  });
+
+  // Upper lower Baseline functionality
+  var baselineSepValues = ratioValues.slice(0, 5);
+  var baselineArr = ee.Array(baselineSepValues);
+
+  var meanResult = baselineArr.reduce(ee.Reducer.mean(), [0]);
+  var stdDevResult = baselineArr.reduce(ee.Reducer.stdDev(), [0]);
+
+  var meanScalar = meanResult.get([0]);
+  var stdDevScalar = stdDevResult.get([0]);
+
+  var lowerBand = meanScalar.subtract(stdDevScalar);
+  var upperBand = meanScalar.add(stdDevScalar);
+
+  var minBaseline = ee.List.repeat(lowerBand, 7);
+  var maxBaseline = ee.List.repeat(upperBand, 7);
+
+  var chart = ui.Chart.array
+    .values({
+      array: ee.Array([ratioValues, maxBaseline, minBaseline]),
+      axis: 1,
+      xLabels: YEARS,
+    })
+    .setSeriesNames([
+      "HCHO/NO2-Ratio",
+      "Upper Baseline (2019-2023)",
+      "Lower Baseline (2019-2023)",
+    ])
+    .setOptions({
+      title: "Yearly September HCHO/NO2 Ratio 2019-2025 for Tapajos-Basin",
+      hAxis: { title: "Years" },
+      vAxis: { title: "Ratio" },
+      lineWidth: 2,
+      colors: ["0000ff", "e37d05", "e37d05"],
+      series: {
+        0: {},
+        1: { lineDashStyle: [4, 4], pointSize: 0 },
+        2: { lineDashStyle: [4, 4], pointSize: 0 },
+      },
+    });
+
+  print(chart);
+};
+
 // === EXPORTS
 exports.YEARS = YEARS;
 exports.MONTHS = MONTHS;
@@ -595,3 +669,4 @@ exports.buildMonthlyNo2Chart = buildMonthlyNo2Chart;
 exports.buildYearlySeptemberNo2Chart = buildYearlySeptemberNo2Chart;
 
 exports.buildYearlySeptemberNdviChart = buildYearlySeptemberNdviChart;
+exports.buildYearlySeptemberRatioChart = buildYearlySeptemberRatioChart;
