@@ -247,6 +247,14 @@ Map.addLayer(
   true,
 );
 
+// === CRITICAL ZONE LAYER
+Map.addLayer(
+  criticalZoneProcessor.getCriticalZones(AOI_TAPAJOS).selfMask(),
+  { palette: ["red"] },
+  "Critical Zones",
+  true,
+);
+
 // === TIMELAPS ===
 
 /*
