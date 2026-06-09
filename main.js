@@ -5,6 +5,7 @@ var hchoProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing
 var no2Processor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel5p-no2");
 var ndviProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel2-ndvi");
 var raddProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/radd");
+var criticalZoneProcessor = require("users/rcrdbchmnn/hcho-investigation:analysis/multi-sensor");
 
 // === AREAS OF INTERESTS ===
 
@@ -323,3 +324,7 @@ aoiStats.buildMonthlyFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 
 aoiStats.buildYearlySeptemberNdviChart(AOI_TAPAJOS);
 aoiStats.buildYearlySeptemberRatioChart(AOI_TAPAJOS, no2RatioThreshold);
+
+// === PRINTS
+
+print(criticalZoneProcessor.getCriticalZones(AOI_TAPAJOS));
