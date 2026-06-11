@@ -211,7 +211,7 @@ var ratioVis = {
 print("---- Ratio");
 print(
   ratioSep2024.reduceRegion({
-    reducer: ee.Reducer.minMax(),
+    reducer: ee.Reducer.minMax().combine(ee.Reducer.mean(), "mean", true),
     geometry: AOI_TAPAJOS,
     scale: 5000,
     maxPixels: 1e9,
