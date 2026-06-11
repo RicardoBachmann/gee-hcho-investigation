@@ -1,4 +1,7 @@
-//Accessing RADD forest disturbance alert
+// RADD Forest Disturbance Alert data processing
+// Collection: projects/radar-wur/raddalert/v1
+// Filters by yyDOY pixel values (not filterDate) - RADD is a single image, not a time series
+// Provides: monthly confirmed disturbance alerts (alert == 3)
 
 var radd = ee.ImageCollection("projects/radar-wur/raddalert/v1");
 var geography = "sa"; // south america
@@ -7,7 +10,7 @@ var geography = "sa"; // south america
 // RADD is a single Image only with two band, no own timestamps, no timestamps to filter
 // RADD = filter through pixel values alert_date bands.
 // (year, month) -> yyDOY-Range
-// ("2024", 9, aoi) -> 24245 - 22427
+// ("2024", 9, aoi) -> 24245 - 24274
 var getMonthlyComposite = function (year, month, aoi) {
   var monthString = ee.Number(month).format("%02d");
   var startDate = ee.String(year).cat("-").cat(monthString).cat("-01");
@@ -38,7 +41,7 @@ var getMonthlyComposite = function (year, month, aoi) {
   var mask = alertDate
     .gte(startCode)
     .and(alertDate.lte(endCode))
-    .and(alert.eq(3));
+    .and(alert.eq(3)); // 3 = confirmed alert (1=potential, 2=unconfirmed, 3=confirmed)
 
   return raddImage.select("Date").updateMask(mask).clip(aoi);
 };

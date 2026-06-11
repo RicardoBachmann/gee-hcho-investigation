@@ -1,3 +1,8 @@
+// FIRMS (Fire Information for Resource Management System) data processing
+// Collection: FIRMS (MODIS/VIIRS active fire detections)
+// Band: T21 brightness temperature .max() used to capture peak fire intensity per pixel
+// Provides: yearly and monthly fire composites
+
 var FIRMS = "FIRMS";
 var firmsData = ee.ImageCollection(FIRMS);
 

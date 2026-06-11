@@ -1,3 +1,8 @@
+// Sentinel-5P TROPOMI HCHO (Formaldehyd) data processing
+// Collection: COPERNICUS/S5P/OFFL/L3_HCHO
+// QA filter: cloud_fraction < 0.5 (used for consistency with NO2 filter)
+// Provides: yearly, monthly and anomaly composites also Timelaps functionality
+
 var SENTINEL5P_HCHO = "COPERNICUS/S5P/OFFL/L3_HCHO";
 var s5p_hcho = ee.ImageCollection(SENTINEL5P_HCHO);
 var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -8,11 +13,11 @@ exports.getYearlyComposite = function (year, aoi) {
       .filterDate(year + "-01-01", year + "-12-31")
       .filterBounds(aoi)
       // Implement QA-Filter (Quality score 0-1)
-      // TROPOMI doc suggest qa_value 0.5 as standard screening to avoid data issues like cloud cover or data-noise
-      // GEE use 'cloud_fraction' band lt(0.5) = less then 50% Cloud cover data
+      // Cloud_fraction < 0.5 used instead of qa_value for consistency with NO2 filter
+      // (unlike HCHO, NO2 L3 product has no qa_value band in GEE)
       .map(function (img) {
-        var qaValue = img.select("cloud_fraction").lt(0.5);
-        return img.updateMask(qaValue);
+        var cloudMasked = img.select("cloud_fraction").lt(0.5);
+        return img.updateMask(cloudMasked);
       })
       .select("tropospheric_HCHO_column_number_density")
       .mean()
@@ -29,8 +34,8 @@ var getMonthlyComposite = function (year, month, aoi) {
     .filterDate(startDate, endDate)
     .filterBounds(aoi)
     .map(function (img) {
-      var qaValue = img.select("cloud_fraction").lt(0.5);
-      return img.updateMask(qaValue);
+      var cloudMasked = img.select("cloud_fraction").lt(0.5);
+      return img.updateMask(cloudMasked);
     })
     .select("tropospheric_HCHO_column_number_density")
     .mean()
@@ -40,7 +45,8 @@ var getMonthlyComposite = function (year, month, aoi) {
 exports.getMonthlyComposite = getMonthlyComposite;
 
 var getAnomalyComposite = function (aoi) {
-  //  1 Image-Signal(Sep 2024) minus 5 Images-Baseline(2019-2023) = Anomaly?
+  //  1 Image-Signal (Sep 2024) minus 5 Images-Baseline(2019-2023) = Anomaly?
+
   var img2019 = getMonthlyComposite("2019", 9, aoi);
   var img2020 = getMonthlyComposite("2020", 9, aoi);
   var img2021 = getMonthlyComposite("2021", 9, aoi);
@@ -63,7 +69,8 @@ var getAnomalyComposite = function (aoi) {
   return anomalySignal2024;
 };
 
-// === TIMELAPS
+// === TIMELAPS ===
+
 var getTimelapsCollection = function (year, aoi) {
   var images = [];
 
@@ -84,7 +91,6 @@ var hchoVis = {
 var hchoAnomalyVis = {
   min: -0.0002,
   max: 0.0002,
-  //palette: ['6338ca', '3856ca', '56ca38', 'ff0000']
   palette: ["black", "blue", "purple", "cyan", "green", "yellow", "red"],
 };
 
