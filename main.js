@@ -49,6 +49,9 @@ var no2_monthlyTapajos = no2Processor.getMonthlyComposite(
 );
 var no2_anomalyTapajos = no2Processor.getAnomalyComposite(AOI_TAPAJOS);
 
+var ratioSep2024 = criticalZoneProcessor.getRatioImage(AOI_TAPAJOS);
+var ratioThreshold = criticalZoneProcessor.ratioThreshold;
+
 var fire_yearlyAmazon = firms.getYearlyComposite("2024", AOI_AMAZON);
 var fire_yearlyTapajos = firms.getYearlyComposite("2024", AOI_TAPAJOS);
 var fire_monthlyTapajos = firms.getMonthlyComposite("2024", 9, AOI_TAPAJOS);
@@ -74,8 +77,8 @@ var radd_monthlyTapajos = raddProcessor.getMonthlyComposite(
 // === MAP-LAYERS  ===
 
 // === Main Layers
-// Shows spatially where within the AOI the pixels lie above the baseline(2019-2023) —
-// the red pixels on the map are the locations causing the outlier in the "Yearly September HCHO Concentration chart
+// Shows spatially where within the AOI the pixels lie above the baseline(2019-2023)
+
 Map.addLayer(
   hcho_anomalyTapajos,
   hchoProcessor.hchoAnomalyVis,
@@ -159,4 +162,4 @@ aoiStats.buildAnnualFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 aoiStats.buildMonthlyFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 
 aoiStats.buildYearlySeptemberNdviChart(AOI_TAPAJOS);
-aoiStats.buildYearlySeptemberRatioChart(AOI_TAPAJOS, no2RatioThreshold);
+aoiStats.buildYearlySeptemberRatioChart(AOI_TAPAJOS, ratioThreshold);

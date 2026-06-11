@@ -15,6 +15,26 @@ var ndviProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing
 var firmsProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/firms");
 var raddProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/radd");
 
+var ratioThreshold = 0.00001017;
+
+var getRatioImage = function (geometryTapajos) {
+  // Ratio condition: mask NO2 pixels near zero before division to prevent ratio instability
+  // NO2 threshold = 1/3 of Sep.2024 regional mean (0.0000305 mol/m2) / 3 = 0.00001017 (conservative lower limit)
+  var hchoComposite = hchoProcessor.getMonthlyComposite(
+    "2024",
+    9,
+    geometryTapajos,
+  );
+  var no2Composite = no2Processor.getMonthlyComposite(
+    "2024",
+    9,
+    geometryTapajos,
+  );
+  var no2Masked = no2Composite.updateMask(no2Composite.gt(ratioThreshold));
+
+  return hchoComposite.divide(no2Masked);
+};
+
 var getCriticalZones = function (geometryTapajos) {
   var hchoAnomaly = hchoProcessor.getAnomalyComposite(geometryTapajos);
   var ndviAnomaly = ndviProcessor.getAnomalyComposite(geometryTapajos);
@@ -28,34 +48,20 @@ var getCriticalZones = function (geometryTapajos) {
 
   // FIRMS/RADD: .unmask(0) fills masked (no data) pixels with 0, then .not() inverts:
   // result is 1 where NO fire/disturbance was detected, 0 where fire/disturbance exists
-  var firmsMask = firmsProcessor
+  var firmsMasked = firmsProcessor
     .getMonthlyComposite("2024", 9, geometryTapajos)
     .unmask(0);
-  var raddMask = raddProcessor
+  var raddMasked = raddProcessor
     .getMonthlyComposite("2024", 9, geometryTapajos)
     .unmask(0);
 
-  // Ratio condition: mask NO2 pixels near zero before division to prevent ratio instability
-  // NO2 threshold = 1/3 of Sep.2024 regional mean (0.0000305 mol/m2) / 3 = 0.00001017 (conservative lower limit)
   // Ratio threshold 25 is above regional mean (17.33) and above sampled inspected anthropogenic pixels (~3.5)
-  var no2Composite = no2Processor.getMonthlyComposite(
-    "2024",
-    9,
-    geometryTapajos,
-  );
-  var hchoComposite = hchoProcessor.getMonthlyComposite(
-    "2024",
-    9,
-    geometryTapajos,
-  );
-  var ratioThreshold = 0.00001017;
-  var no2Mask = no2Composite.updateMask(no2Composite.gt(ratioThreshold));
-  var ratioCondition = hchoComposite.divide(no2Mask).gt(25);
+  var ratioCondition = getRatioImage(geometryTapajos).gt(25);
 
   var hchoCondition = hchoAnomaly.gt(hchoThreshold);
   var ndviCondition = ndviAnomaly.lt(ndviThreshold);
-  var firmsCondition = firmsMask.not();
-  var raddCondition = raddMask.not();
+  var firmsCondition = firmsMasked.not();
+  var raddCondition = raddMasked.not();
 
   var criticalZoneCondition = hchoCondition
     .and(ndviCondition)
@@ -72,5 +78,7 @@ var ratioVis = {
   palette: ["ffffff", "ffcccc", "ff6666", "cc0000", "7a0000"],
 };
 
-exports.ratioVis = ratioVis;
+exports.getRatioImage = getRatioImage;
 exports.getCriticalZones = getCriticalZones;
+exports.ratioThreshold = ratioThreshold;
+exports.ratioVis = ratioVis;
