@@ -1,3 +1,8 @@
+// Sentinel-2 NDVI (Normalized Difference Vegetation Index) data processing
+// Collection: COPERNICUS/S2_SR_HARMONIZED
+// Cloud mask: SCL band (4=Vegetation, 5=BareSoil, 6=Water, 11=Snow)
+// Provides: yearly, monthly and anomaly composites
+
 var SENTINEL2_NDVI = "COPERNICUS/S2_SR_HARMONIZED";
 
 var s2_ndvi = ee.ImageCollection(SENTINEL2_NDVI);

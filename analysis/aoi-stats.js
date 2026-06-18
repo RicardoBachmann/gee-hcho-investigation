@@ -1,8 +1,8 @@
-// ============================================
-// aoi-stats.js
-// Annual, Monthly & Seasonal statistics for AOI comparison
+// Annual, Monthly & Seasonal statistics for AOI's comparison
+// Formaldehyd(HCHO), Nitrogen Dioxide(NO2),
+// Fire Information for Resource Management System(FIRMS),
+// Normalized Difference Vegetation Index (NDVI),
 // Amazon Region compare to Tapajós Basin
-// ============================================
 
 var hchoProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel5p-hcho");
 var no2Processor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel5p-no2");
@@ -11,7 +11,7 @@ var ndviProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing
 var YEARS = ["2019", "2020", "2021", "2022", "2023", "2024", "2025"];
 var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-// === ANNUAL HCHO - AOIs CHART (2019-2025)
+// === ANNUAL HCHO - AOIs CHART (2019-2025) ===
 
 var buildAnnualChart = function (geometryAmazon, geometryTapajos) {
   var amazonHchoValues = [];
@@ -45,10 +45,6 @@ var buildAnnualChart = function (geometryAmazon, geometryTapajos) {
         .Number(hchoMeanTapajos.get("tropospheric_HCHO_column_number_density"))
         .multiply(1e6),
     );
-
-    //print("---"  + year + "---");
-    //print("   HCHO AMAZON-REGION:", hchoMeanAmazon.get("tropospheric_HCHO_column_number_density"));
-    //print("   HCHO TAPAJOS-BASIN:", hchoMeanTapajos.get("tropospheric_HCHO_column_number_density"));
   });
 
   var chart = ui.Chart.array
@@ -69,7 +65,7 @@ var buildAnnualChart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// === Monthly HCHO - AOIs CHART (2024)
+// === MONTHLY HCHO - AOIs CHART (2024) ===
 
 var buildMonthlyChart = function (geometryAmazon, geometryTapajos) {
   var amazonHchoValues = [];
@@ -111,10 +107,6 @@ var buildMonthlyChart = function (geometryAmazon, geometryTapajos) {
         .Number(hchoMeanTapajos.get("tropospheric_HCHO_column_number_density"))
         .multiply(1e6),
     );
-
-    //print("---"  + month + "---");
-    //print("   HCHO AMAZON-REGION:", hchoMeanAmazon.get("tropospheric_HCHO_column_number_density"));
-    //print("   HCHO TAPAJOS-BASIN:", hchoMeanTapajos.get("tropospheric_HCHO_column_number_density"));
   });
 
   var chart = ui.Chart.array
@@ -135,7 +127,7 @@ var buildMonthlyChart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// Yearly September HCHO - Tapajos Basin Chart (2019-2025)
+// === YEARLY SEPTEMBER HCHO - Tapajos Basin Chart (2019-2025) ===
 
 var buildYearlySeptemberHchoChart = function (geometryTapajos) {
   var tapajosSeptemberValues = [];
@@ -160,13 +152,11 @@ var buildYearlySeptemberHchoChart = function (geometryTapajos) {
         )
         .multiply(1e6), // .multiply(1e6) to display data values in Chart Tooltip
     );
-
-    //print('---' + year + '---');
-    //print("HCHO TAPAJOS SEPTEMBER:", hchoSeptemberMean.get('tropospheric_HCHO_column_number_density'));
   });
 
-  // Upper and Lowe Basline functionality
-  var baselineSepValues = tapajosSeptemberValues.slice(0, 5); // 2019-2023
+  // Upper & Lower Basline functionality
+
+  var baselineSepValues = tapajosSeptemberValues.slice(0, 5); // slice from 2019-2023
   var baselineArr = ee.Array(baselineSepValues); // .reducer() works only of GEE-Objects not for javascript
 
   var meanResult = baselineArr.reduce(ee.Reducer.mean(), [0]);
@@ -196,7 +186,7 @@ var buildYearlySeptemberHchoChart = function (geometryTapajos) {
       hAxis: { title: "Years" },
       vAxis: { title: "HCHO (mol/m²)" },
       lineWidth: 2,
-      colors: ["e37d05", "e37d05", "e37d05"],
+      colors: ["1d6b99", "e37d05", "e37d05"],
       series: {
         0: {},
         1: { lineDashStyle: [4, 4], pointSize: 0 },
@@ -207,7 +197,7 @@ var buildYearlySeptemberHchoChart = function (geometryTapajos) {
   print(chart);
 };
 
-// === ANNUAL N02 - AOIs CHART (2019-2025)
+// === ANNUAL N02 - AOIs CHART (2019-2025) ===
 
 var buildAnnualNo2Chart = function (geometryAmazon, geometryTapajos) {
   var amazonNo2Values = [];
@@ -241,10 +231,6 @@ var buildAnnualNo2Chart = function (geometryAmazon, geometryTapajos) {
         .Number(no2TapajosMean.get("tropospheric_NO2_column_number_density"))
         .multiply(1e6),
     );
-
-    //print("---" + year + "---");
-    //print("NO2 AMAZON-REGION:", no2AmazonMean.get('tropospheric_NO2_column_number_density'));
-    //print("NO2 TAPAJOS-BASIN:", no2TapajosMean.get('tropospheric_NO2_column_number_density'));
   });
 
   var chart = ui.Chart.array
@@ -265,7 +251,7 @@ var buildAnnualNo2Chart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// === MONTHLY N02 - AOIs CHART (2024)
+// === MONTHLY N02 - AOIs CHART (2024) ===
 
 var buildMonthlyNo2Chart = function (geometryAmazon, geometryTapajos) {
   var no2AmazonValues = [];
@@ -307,10 +293,6 @@ var buildMonthlyNo2Chart = function (geometryAmazon, geometryTapajos) {
         .Number(no2TapajosMean.get("tropospheric_NO2_column_number_density"))
         .multiply(1e6),
     );
-
-    //print("---" + month + "---");
-    //print("NO2 CONCENTRATION 2024 AMAZON-REGION:", no2AmazonMean.get('tropospheric_NO2_column_number_density'));
-    //print("NO2 CONCENTRATION 2024 TAPAJOS-REGION:", no2TapajosMean.get('tropospheric_NO2_column_number_density'));
   });
 
   var chart = ui.Chart.array
@@ -331,7 +313,7 @@ var buildMonthlyNo2Chart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// Yearly September NO2 - Tapajos Basin Chart (2019-2025)
+// === YEARLY SEPTEMBER NO2 - Tapajos Basin Chart (2019-2025) ===
 
 var buildYearlySeptemberNo2Chart = function (geometryTapajos) {
   var tapajosSeptemberValues = [];
@@ -355,12 +337,9 @@ var buildYearlySeptemberNo2Chart = function (geometryTapajos) {
         .Number(no2SeptemberMean.get("tropospheric_NO2_column_number_density"))
         .multiply(1e6),
     );
-
-    //print('---' + year + '---');
-    //print('NO2 TAPAJOS SEPTEMBER:', no2SeptemberMean.get('tropospheric_NO2_column_number_density'));
   });
 
-  // Upper Lower Basline functionality
+  // Upper & Lower Basline functionality
 
   var baselineSepValues = tapajosSeptemberValues.slice(0, 5); // 2019-2023
   var baselineArr = ee.Array(baselineSepValues); //
@@ -404,7 +383,7 @@ var buildYearlySeptemberNo2Chart = function (geometryTapajos) {
   print(chart);
 };
 
-// === ANNUAL FIRMS FIRE - AOIs CHART (2019-2025)
+// === ANNUAL FIRMS FIRE - AOIs CHART (2019-2025) ===
 
 var buildAnnualFirmsChart = function (geometryAmazon, geometryTapajos) {
   var amazonFirmsValues = [];
@@ -430,10 +409,6 @@ var buildAnnualFirmsChart = function (geometryAmazon, geometryTapajos) {
 
     amazonFirmsValues.push(amazonFirmsMean.get("T21"));
     tapajosFirmsValues.push(tapajosFirmsMean.get("T21"));
-
-    //print("---"  + year + "---");
-    //print("   FIRE CONCENTRATION AMAZON-REGION:", amazonFirmsMean.get("T21"));
-    //print("   FIRE CONCENTRATION TAPAJOS-BASIN:", tapajosFirmsMean.get("T21"));
   });
 
   var chart = ui.Chart.array
@@ -454,7 +429,7 @@ var buildAnnualFirmsChart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// === MONTHLY FIRMS FIRE CHART 2024
+// === MONTHLY FIRMS FIRE CHART 2024 ===
 
 var buildMonthlyFirmsChart = function (geometryAmazon, geometryTapajos) {
   var amazonFirmsValues = [];
@@ -488,10 +463,6 @@ var buildMonthlyFirmsChart = function (geometryAmazon, geometryTapajos) {
 
     amazonFirmsValues.push(amazonFirmsMean.get("T21"));
     tapajosFirmsValues.push(tapajosFirmsMean.get("T21"));
-
-    //print("---" + month + "---");
-    //print("FIRE CONCENTRATION (10.24) AMAZON-REGION:", amazonFirmsMean.get("T21"));
-    //print("FIRE CONCENTRATION (10.24) TAPAJOS-REGION:", tapajosFirmsMean.get("T21"));
   });
 
   var chart = ui.Chart.array
@@ -512,7 +483,7 @@ var buildMonthlyFirmsChart = function (geometryAmazon, geometryTapajos) {
   print(chart);
 };
 
-// Yearly September NDVI - Tapajos Basin Chart (2019-2025)
+// YEARLY SEPTEMBER NDVI - Tapajos Basin Chart (2019-2025) ===
 
 var buildYearlySeptemberNdviChart = function (geometryTapajos) {
   var ndviTapajosValues = [];
@@ -532,12 +503,9 @@ var buildYearlySeptemberNdviChart = function (geometryTapajos) {
     });
 
     ndviTapajosValues.push(tapajosNdviMean.get("nd"));
-
-    print("---" + year + "---");
-    print("NDVI TAPAJOS REGION", tapajosNdviMean.get("nd"));
   });
 
-  // Upper Lower Baseline functionality
+  // Upper & Lower Baseline functionality
 
   var baselineSepValues = ndviTapajosValues.slice(0, 5); // 2019-2023
   var baselineArr = ee.Array(baselineSepValues); // .reducer() works only for GEE-Objects.. NO javascript
@@ -579,7 +547,77 @@ var buildYearlySeptemberNdviChart = function (geometryTapajos) {
   print(chart);
 };
 
-// === EXPORTS
+// YEARLY SEPTEMBER HCHO/NO2 RATIO - Tapajos Basin Chart (2019-2025)
+
+var buildYearlySeptemberRatioChart = function (geometryTapajos, no2Threshold) {
+  var ratioValues = [];
+
+  YEARS.forEach(function (year) {
+    var hchoTapajos = hchoProcessor.getMonthlyComposite(
+      year,
+      9,
+      geometryTapajos,
+    );
+    var no2Tapajos = no2Processor.getMonthlyComposite(year, 9, geometryTapajos);
+
+    var no2Masked = no2Tapajos.updateMask(no2Tapajos.gt(no2Threshold));
+    var no2Ratio = hchoTapajos.divide(no2Masked);
+
+    var ratioMean = no2Ratio.reduceRegion({
+      reducer: ee.Reducer.mean(),
+      geometry: geometryTapajos,
+      scale: 5000,
+      maxPixels: 1e9,
+    });
+
+    ratioValues.push(ratioMean.get("tropospheric_HCHO_column_number_density"));
+  });
+
+  // Upper & lower Baseline functionality
+
+  var baselineSepValues = ratioValues.slice(0, 5);
+  var baselineArr = ee.Array(baselineSepValues);
+
+  var meanResult = baselineArr.reduce(ee.Reducer.mean(), [0]);
+  var stdDevResult = baselineArr.reduce(ee.Reducer.stdDev(), [0]);
+
+  var meanScalar = meanResult.get([0]);
+  var stdDevScalar = stdDevResult.get([0]);
+
+  var lowerBand = meanScalar.subtract(stdDevScalar);
+  var upperBand = meanScalar.add(stdDevScalar);
+
+  var minBaseline = ee.List.repeat(lowerBand, 7);
+  var maxBaseline = ee.List.repeat(upperBand, 7);
+
+  var chart = ui.Chart.array
+    .values({
+      array: ee.Array([ratioValues, maxBaseline, minBaseline]),
+      axis: 1,
+      xLabels: YEARS,
+    })
+    .setSeriesNames([
+      "HCHO/NO2-Ratio",
+      "Upper Baseline (2019-2023)",
+      "Lower Baseline (2019-2023)",
+    ])
+    .setOptions({
+      title: "Yearly September HCHO/NO2 Ratio 2019-2025 for Tapajos-Basin",
+      hAxis: { title: "Years" },
+      vAxis: { title: "Ratio" },
+      lineWidth: 2,
+      colors: ["0000ff", "e37d05", "e37d05"],
+      series: {
+        0: {},
+        1: { lineDashStyle: [4, 4], pointSize: 0 },
+        2: { lineDashStyle: [4, 4], pointSize: 0 },
+      },
+    });
+
+  print(chart);
+};
+
+// === EXPORTS ===
 exports.YEARS = YEARS;
 exports.MONTHS = MONTHS;
 
@@ -595,3 +633,4 @@ exports.buildMonthlyNo2Chart = buildMonthlyNo2Chart;
 exports.buildYearlySeptemberNo2Chart = buildYearlySeptemberNo2Chart;
 
 exports.buildYearlySeptemberNdviChart = buildYearlySeptemberNdviChart;
+exports.buildYearlySeptemberRatioChart = buildYearlySeptemberRatioChart;

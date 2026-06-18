@@ -5,6 +5,7 @@ var hchoProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing
 var no2Processor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel5p-no2");
 var ndviProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/sentinel2-ndvi");
 var raddProcessor = require("users/rcrdbchmnn/hcho-investigation:data-processing/radd");
+var criticalZoneProcessor = require("users/rcrdbchmnn/hcho-investigation:analysis/multi-sensor");
 
 // === AREAS OF INTERESTS ===
 
@@ -22,7 +23,7 @@ Map.addLayer(
   "Area of interest: Tapajos Basin",
 );
 
-// === DATA LAYERS ===
+// === GET DATA-PROCESSING  ===
 
 var hcho_yearlyAmazon = hchoProcessor.getYearlyComposite("2024", AOI_AMAZON);
 var hcho_monthlyAmazon = hchoProcessor.getMonthlyComposite(
@@ -48,6 +49,9 @@ var no2_monthlyTapajos = no2Processor.getMonthlyComposite(
 );
 var no2_anomalyTapajos = no2Processor.getAnomalyComposite(AOI_TAPAJOS);
 
+var ratioSep2024 = criticalZoneProcessor.getRatioImage(AOI_TAPAJOS);
+var ratioThreshold = criticalZoneProcessor.ratioThreshold;
+
 var fire_yearlyAmazon = firms.getYearlyComposite("2024", AOI_AMAZON);
 var fire_yearlyTapajos = firms.getYearlyComposite("2024", AOI_TAPAJOS);
 var fire_monthlyTapajos = firms.getMonthlyComposite("2024", 9, AOI_TAPAJOS);
@@ -64,211 +68,85 @@ var ndvi_monthlyTapajos = ndviProcessor.getMonthlyComposite(
 );
 var ndvi_anomalyTapajos = ndviProcessor.getAnomalyComposite(AOI_TAPAJOS);
 
-print(
-  ndvi_anomalyTapajos.reduceRegion({
-    reducer: ee.Reducer.minMax(),
-    geometry: AOI_TAPAJOS,
-    scale: 1000,
-    maxPixels: 1e9,
-  }),
-);
-
 var radd_monthlyTapajos = raddProcessor.getMonthlyComposite(
   "2024",
   9,
   AOI_TAPAJOS,
 );
 
-Map.addLayer(
-  ndvi_yearlyTapajos,
-  ndviProcessor.ndviVis,
-  "NDVI - Tapajos 2019",
-  true,
-);
-Map.addLayer(
-  ndvi_yearlyTapajos2024,
-  ndviProcessor.ndviVis,
-  "NDVI - Tapajos 2024",
-  true,
-);
-Map.addLayer(
-  ndvi_monthlyTapajos,
-  ndviProcessor.ndviVis,
-  "NDVI - Tapajos Sep.2024",
-  true,
-);
-Map.addLayer(
-  ndvi_anomalyTapajos,
-  ndviProcessor.ndviAnomalyVis,
-  "NDVI - Anomaly Signals",
-  true,
-);
+// === MAP-LAYERS  ===
 
-Map.addLayer(
-  fire_yearlyAmazon,
-  firms.firesVis,
-  "Amazon - Sensing Fires 2024",
-  false,
-);
-Map.addLayer(
-  fire_yearlyTapajos,
-  firms.firesVis,
-  "Tapajos - Sensing Fires 2024",
-  false,
-);
-Map.addLayer(
-  fire_monthlyTapajos,
-  firms.firesVis,
-  "Tapajos - Sensing Fires Sep 2024",
-  false,
-);
+// === Main Layers
+// Shows spatially where within the AOI the pixels lie above the baseline(2019-2023)
 
-Map.addLayer(
-  hcho_yearlyAmazon,
-  hchoProcessor.hchoVis,
-  "Amazon - HCHO 2024",
-  false,
-);
-Map.addLayer(
-  hcho_monthlyAmazon,
-  hchoProcessor.hchoVis,
-  "Amazon - HCHO 09.2024",
-  false,
-);
-Map.addLayer(
-  hcho_yearlyTapajos,
-  hchoProcessor.hchoVis,
-  "Tapajos - HCHO 2024",
-  false,
-);
-Map.addLayer(
-  hcho_monthlyTapajos,
-  hchoProcessor.hchoVis,
-  "Tapajos - HCHO 09.2024",
-  false,
-);
-
-// Shows spatially where within the AOI the pixels lie above the baseline(2019-2023) —
-// the red pixels on the map are the locations causing the outlier in the "Yearly September HCHO Concentration chart
 Map.addLayer(
   hcho_anomalyTapajos,
   hchoProcessor.hchoAnomalyVis,
-  "Tapajos - HCHO Sep 2024 Anomaly Signals",
+  "HCHO Anomaly Signals - Sep.2024",
   false,
 );
 Map.addLayer(
   no2_anomalyTapajos,
   no2Processor.no2AnomalyVis,
-  "Tapajos - NO2 Sep 2024 Anomaly Signals",
+  "NO2 Anomaly Signals - Sep.2024",
   false,
 );
 
-// HCHO NO2 Ratio-Layers
-// .divide() applied to both Sep 2024 composites
-// This shows spatially where the signal is predominantly pyrogenic (anthropogenic) and where it is more
-// biogenic transported
-var ratioSep2024 = hcho_monthlyTapajos.divide(no2_monthlyTapajos);
-var ratioVis = {
-  min: 0,
-  max: 50,
-  palette: ["ffffff", "ffcccc", "ff6666", "cc0000", "7a0000"],
-};
-
-print(
-  ratioSep2024.reduceRegion({
-    reducer: ee.Reducer.minMax(),
-    geometry: AOI_TAPAJOS,
-    scale: 5000,
-    maxPixels: 1e9,
-  }),
-);
-
-Map.addLayer(ratioSep2024, ratioVis, "HCHO & NO2 Ratio 2024", false);
-
-Map.addLayer(no2_yearlyAmazon, no2Processor.no2Vis, "Amazon - NO2 2024", false);
+// HCHO/NO2 Discriminator
 Map.addLayer(
-  no2_yearlyTapajos,
-  no2Processor.no2Vis,
-  "Tapajos - NO2 2024",
+  ratioSep2024,
+  criticalZoneProcessor.ratioVis,
+  "HCHO/NO2 Ratio - Sep.2024",
   false,
+);
+
+// Environmental Stressors
+Map.addLayer(
+  ndvi_anomalyTapajos,
+  ndviProcessor.ndviAnomalyVis,
+  "NDVI Anomaly Signals - Sep.2024",
+  true,
 );
 Map.addLayer(
-  no2_monthlyAmazon,
-  no2Processor.no2Vis,
-  "Amazon - NO2 09.2024",
+  fire_monthlyTapajos,
+  firms.firesVis,
+  "FIRMS Fires - Sep.2024",
   false,
 );
-Map.addLayer(
-  no2_monthlyTapajos,
-  no2Processor.no2Vis,
-  "Tapajos - NO2 09.2024",
-  false,
-);
-
 Map.addLayer(
   radd_monthlyTapajos,
   raddProcessor.raddVis,
-  "RADD Disturbance - Sep2024",
+  "RADD Disturbance - Sep.2024",
   true,
 );
 
-// === TIMELAPS ===
+// Critical Zones
+Map.addLayer(
+  criticalZoneProcessor.getCriticalZones(AOI_TAPAJOS).selfMask(),
+  { palette: ["red"] },
+  "Critical Zones - Sep.2024",
+  true,
+);
 
-var hchoThumb2024 = ui.Thumbnail({
-  image: hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON),
-  params: {
-    min: hchoProcessor.hchoVis.min,
-    max: hchoProcessor.hchoVis.max,
-    palette: hchoProcessor.hchoVis.palette,
-    region: AOI_AMAZON,
-    framesPerSecond: 2,
-    dimensions: 500,
-  },
-});
-
-var no2Thumb2024 = ui.Thumbnail({
-  image: no2Processor.getTimelapsCollection("2024", AOI_AMAZON),
-  params: {
-    min: no2Processor.no2Vis.min,
-    max: no2Processor.no2Vis.max,
-    palette: no2Processor.no2Vis.palette,
-    region: AOI_AMAZON,
-    framesPerSecond: 2,
-    dimensions: 500,
-  },
-});
-
-// === UI PANNEL
-
-var panel = ui.Panel({
-  widgets: [hchoThumb2024, no2Thumb2024],
-  layout: ui.Panel.Layout.flow("vertical"),
-  style: { position: "top-center" },
-});
-
-Map.add(panel);
-
-// === EXPORT
+// === Comparison Layers (inactive)
 /*
- // Export fix: .visualize() coverts 1-Band-HCHO-Image into 3-Band-RGB-Image / exports requires at least 3bands.
- var collection = hchoProcessor.getTimelapsCollection("2024", AOI_AMAZON)
-  .map(function(img){
-    return img.visualize(hchoProcessor.hchoVis);
-  });
+  Map.addLayer(hcho_yearlyAmazon, hchoProcessor.hchoVis, "HCHO Amazon - Year.2024", false);
+  Map.addLayer(hcho_yearlyTapajos, hchoProcessor.hchoVis, "HCHO Tapajos - Year.2024", false);
+  Map.addLayer(hcho_monthlyAmazon, hchoProcessor.hchoVis, "HCHO Amazon - Sep.2024", false);
+  Map.addLayer(hcho_monthlyTapajos, hchoProcessor.hchoVis, "HCHO Tapajos - Sep.2024", false);
  
- 
- Export.video.toDrive({
-  collection: collection,
-  description: 'hchoTimelaps2024',
-  scale: 3500,
-  framesPerSecond: 2,
-  region: AOI_AMAZON
-});
- 
- */
+  Map.addLayer(no2_yearlyAmazon, no2Processor.no2Vis, "NO2 Amazon - Year.2024", false);
+  Map.addLayer(no2_yearlyTapajos, no2Processor.no2Vis, "NO2 Tapajos - Year.2024", false);
+  Map.addLayer(no2_monthlyAmazon, no2Processor.no2Vis, "NO2 Amazon - Sep.2024", false);
+  Map.addLayer(no2_monthlyTapajos, no2Processor.no2Vis, "NO2 Tapajos - Sep.2024", false);
+  
+  Map.addLayer(fire_yearlyAmazon, firms.firesVis, "FIRMS Fires Amazon - Year.2024", false);
+  Map.addLayer(fire_yearlyTapajos, firms.firesVis, "FIRMS Fires Tapajos - Year.2024", false);
 
-// 424 images to much for timelaps...
-print(hchoProcessor.getTimelapsCollection("2025", AOI_AMAZON).size());
+  Map.addLayer(ndvi_yearlyTapajos, ndviProcessor.ndviVis, "NDVI Tapajos - Year.2019", false);
+  Map.addLayer(ndvi_yearlyTapajos2024, ndviProcessor.ndviVis, "NDVI Tapajos - Year.2024", false);
+  Map.addLayer(ndvi_monthlyTapajos, ndviProcessor.ndviVis, "NDVI Tapajos - Sep.2024", false);
+  */
 
 // === CHARTS ===
 
@@ -284,3 +162,4 @@ aoiStats.buildAnnualFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 aoiStats.buildMonthlyFirmsChart(AOI_AMAZON, AOI_TAPAJOS);
 
 aoiStats.buildYearlySeptemberNdviChart(AOI_TAPAJOS);
+aoiStats.buildYearlySeptemberRatioChart(AOI_TAPAJOS, ratioThreshold);

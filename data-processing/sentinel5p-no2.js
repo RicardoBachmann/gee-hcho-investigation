@@ -1,3 +1,8 @@
+// Sentinel-5P TROPOMI NO2 (Nitrogen Dioxide) data processing
+// Collection: COPERNICUS/S5P/OFFL/L3_NO2
+// QA filter: cloud_fraction < 0.5 (GEE L3 product has no qa_value band for NO2)
+// Provides: yearly, monthly and anomaly composites also Timelaps functionality
+
 var SENTINEL5P_NO2 = "COPERNICUS/S5P/OFFL/L3_NO2";
 var s5p_no2 = ee.ImageCollection(SENTINEL5P_NO2);
 var MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -8,10 +13,11 @@ exports.getYearlyComposite = function (year, aoi) {
       .filterDate(year + "-01-01", year + "-12-31")
       .filterBounds(aoi)
       // Implement QA-Filter (Quality score 0-1)
-      // TROPOMI doc suggest qa_value 0.5 as standard screening to avoid data issues like cloud cover or data-noise
+      // GEE's L3 NO2 Collection doesnt have a qa_value band
+      // Working with cloud_fraction < 0.5 as Proxy to avoid data issues like cloud cover or data-noise
       .map(function (img) {
-        var qaValue = img.select("cloud_fraction").lt(0.5);
-        return img.updateMask(qaValue);
+        var cloudMasked = img.select("cloud_fraction").lt(0.5);
+        return img.updateMask(cloudMasked);
       })
       .select("tropospheric_NO2_column_number_density")
       .mean()
@@ -28,8 +34,8 @@ var getMonthlyComposite = function (year, month, aoi) {
     .filterDate(startDate, endDate)
     .filterBounds(aoi)
     .map(function (img) {
-      var qaValue = img.select("cloud_fraction").lt(0.5);
-      return img.updateMask(qaValue);
+      var cloudMasked = img.select("cloud_fraction").lt(0.5);
+      return img.updateMask(cloudMasked);
     })
     .select("tropospheric_NO2_column_number_density")
     .mean()
@@ -59,7 +65,7 @@ var getAnomalyComposite = function (aoi) {
   return anomalySignal2024;
 };
 
-// === TIMELAPS
+// === TIMELAPS ===
 
 var getTimelapsCollection = function (year, aoi) {
   var images = [];
@@ -86,14 +92,6 @@ var no2AnomalyVis = {
   max: 0.00002,
   palette: ["ffffff", "ffcccc", "ff6666", "cc0000", "7a0000"],
 };
-
-// Light color code
-/*
-var no2Vis = {
-  min: 0,
-  max: 0.0003,
-  palette: ['white', 'red']
-};*/
 
 exports.no2Vis = no2Vis;
 exports.getMonthlyComposite = getMonthlyComposite;
